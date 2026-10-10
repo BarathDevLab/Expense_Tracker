@@ -11,6 +11,26 @@ node_modules
 dist
 dist-ssr
 *.local
+coverage
+.vercel
+.vite
+build
+
+# Local environment and secret files
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
 
 # Editor directories and files
 .vscode/*
