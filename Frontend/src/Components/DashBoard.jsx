@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LineChart,
   Line,
@@ -6,20 +6,22 @@ import {
   YAxis,
   ResponsiveContainer,
   Tooltip,
+  Legend,
 } from "recharts";
 
 import { TranscationItemsListLimited } from "./testing";
 import axios from "axios";
 import LoadingCircle from "./LoadingCircle";
-import { data } from "react-router-dom";
-let Balance = 0;
-let Income = 0;
-let Expense = 0;
+import { aggregateTransactions } from "../utils/transactionChartUtils";
 
 export const DashBoard = () => {
-  const chartData = [];
+  
+
+  
   const [TransactiomList, setTransactiomList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [months, setMonths] = useState(1);
+  const [groupBy, setGroupBy] = useState("daily");
 
   useEffect(() => {
     axios
@@ -30,37 +32,16 @@ export const DashBoard = () => {
         setLoading(false);
       });
   }, []);
-  let sampleData = TransactiomList.reduce((acc, item) => {
-    const dateKey = new Date(item.date).toDateString();
-
-    if (!acc[dateKey]) {
-      acc[dateKey] = {
-        amount: 0,
-        expense: 0,
-      };
-    }
-
-    acc[dateKey].amount += item.amount;
-    if (item.type === "expense") {
-      acc[dateKey].expense += item.amount;
-    }
-
-    return acc;
-  }, {});
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-  // sort by date
-  sampleData = Object.entries(sampleData).map(([data, value]) => ({
-    date: data,
-    amount: value.amount,
-    expense: value.expense,
-  }));
-  sampleData.sort((a, b) => new Date(a.date) - new Date(b.date));
-  chartData.push(
-    ...sampleData.filter((item) => new Date(item.date) > thirtyDaysAgo)
-  );
+  const startDate = new Date();
+  startDate.setMonth(startDate.getMonth() - months);
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+  const chartData = aggregateTransactions(TransactiomList, startDate, endDate, groupBy);
   console.log("chartData:", chartData);
+  let Balance = 0;
+  let Income = 0;
+  let Expense = 0;
+  console.log("Before calculation:", { Balance, Income, Expense });
   TransactiomList.map((list) => {
     console.log(list.type);
     if (list.type === "expense") {
@@ -73,7 +54,7 @@ export const DashBoard = () => {
       Income += list.amount;
     }
   });
-
+console.log("After calculation:", { Balance, Income, Expense });
   return (
     <>
       {loading ? (
@@ -114,14 +95,52 @@ export const DashBoard = () => {
             </div>
           </div>
           <div className="dash-chart-1">
+            <div className="chart-header">
+              <h2>Income &amp; Expenses</h2>
+              <div className="chart-selectors">
+                <label className="chart-selector">
+                  <span>Date range</span>
+                  <select
+                    value={months}
+                    onChange={(event) => {
+                      const range = Number(event.target.value);
+                      setMonths(range);
+                      setGroupBy(range === 1 ? "daily" : range === 12 ? "monthly" : "weekly");
+                    }}
+                  >
+                    <option value={1}>1 month</option>
+                    <option value={3}>3 months</option>
+                    <option value={6}>6 months</option>
+                    <option value={12}>1 year</option>
+                  </select>
+                </label>
+                <label className="chart-selector">
+                  <span>View</span>
+                  <select value={groupBy} onChange={(event) => setGroupBy(event.target.value)}>
+                    {(months === 1
+                      ? ["daily", "weekly"]
+                      : months === 12
+                        ? ["weekly", "monthly"]
+                        : ["daily", "weekly", "monthly"]
+                    ).map((view) => (
+                      <option key={view} value={view}>
+                        {view[0].toUpperCase() + view.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <XAxis dataKey="date" />
                 <YAxis />
                 <Tooltip />
+                <Legend />
                 <Line
                   type="monotone"
-                  dataKey="amount"
+                  dataKey="income"
+                  name="Income"
                   stroke="#2563eb"
                   strokeWidth={2}
                   // dot={false}
@@ -136,6 +155,7 @@ export const DashBoard = () => {
                 <Line
                   type="monotone"
                   dataKey="expense"
+                  name="Expense"
                   stroke="red"
                   strokeWidth={4}
                   // dot={false}

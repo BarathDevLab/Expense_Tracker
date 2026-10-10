@@ -1,10 +1,10 @@
-import React from "react";
+
 import axios from "axios";
 import { useEffect, useState } from "react";
 export const TranscationItemsListLimited = ({}) => {
   const [transactions, setTransactions] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const numberOfPage = 5;
+  const numberOfRows = 5; // Number of rows to display per page
   const refresh = () => {
     axios
       .post(`${import.meta.env.VITE_API_URL}/getTranscationList`)
@@ -36,7 +36,7 @@ export const TranscationItemsListLimited = ({}) => {
   return (
     <div className="Transactiom--con">
       {transactions
-        .slice((currentPage - 1) * numberOfPage, currentPage * numberOfPage)
+        .slice((currentPage - 1) * numberOfRows, currentPage * numberOfRows)
         .map((list, index) => (
           <div className="Transactiom--table" key={index}>
             <div className="trans-item">
@@ -65,10 +65,14 @@ export const TranscationItemsListLimited = ({}) => {
           </div>
         ))}
         <div>
-            <button onClick={()=> setCurrentPage(currentPage - 1)}>
+            <button onClick={()=> setCurrentPage(
+currentPage > 1 ? currentPage - 1 : 1
+            )}>
                 previous
             </button>
-            <button onClick={()=> setCurrentPage(currentPage + 1)}>
+            <button onClick={()=> setCurrentPage(
+currentPage < Math.ceil(transactions.length / numberOfRows ) ? currentPage + 1 : currentPage
+            )}>
                 next
             </button>
         </div>

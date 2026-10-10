@@ -3,10 +3,9 @@ const cors = require("cors");
 const app = express();
 const mongoose = require("mongoose");
 const path = require("path");
-require("dotenv").config({
-  path: path.join(__dirname, "configs", ".env"),
-});
+const dotenv = require("dotenv");
 
+dotenv.config();
 app.use(express.json());
 app.use(cors());
 const Transcationlist = require("./models/list");
@@ -16,7 +15,7 @@ const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
 
 async function startServer() {
   if (!mongoUri) {
-    console.error("Missing MONGO_URI environment variable");
+    console.error("Missing MONGO_URI. Set it in Backend/.env or the process environment.");
     process.exit(1);
   }
 
